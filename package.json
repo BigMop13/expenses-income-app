@@ -1,0 +1,12 @@
+{
+  "name": "expenses-income-app",
+  "version": "1.0.0",
+  "description": "Aplikacja do zarządzania finansami z powiadomieniami push, napisana w Vue.js z wykorzystaniem Node.js i MongoDB.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
