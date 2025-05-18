@@ -40,7 +40,7 @@
 import { mapActions } from 'vuex';
 
 export default {
-  name: 'Login',
+  name: 'LoginPage',
   data() {
     return {
       email: '',
@@ -78,7 +78,7 @@ export default {
 .login-container {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: start;
   min-height: 100vh;
   padding: 20px;
 }
@@ -93,7 +93,13 @@ export default {
 }
 
 .form-group {
+  display: flex;
+  flex-direction: column;
   margin-bottom: 15px;
+  justify-content: center;
+  align-items: center;
+  margin-left: 12px;
+  margin-right: 12px;
 }
 
 label {
@@ -118,6 +124,7 @@ label {
   font-size: 16px;
   cursor: pointer;
   transition: background-color 0.2s;
+  margin-top: 10px;
 }
 
 .btn-primary {
