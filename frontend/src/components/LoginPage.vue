@@ -40,6 +40,7 @@
         />
       </div>
 
+      <!-- First Name field for registration -->
       <div v-if="!isLogin" class="form-group">
         <label for="firstName">First Name</label>
         <input
@@ -52,6 +53,7 @@
         />
       </div>
 
+      <!-- Last Name field for registration -->
       <div v-if="!isLogin" class="form-group">
         <label for="lastName">Last Name</label>
         <input
@@ -121,6 +123,7 @@ export default {
     ...mapActions('auth', ['login', 'register']),
     
     async handleSubmit() {
+      console.log('submit', this.email, this.password, this.firstName, this.lastName);
       if (!this.isLogin && !this.isPasswordsMatch) {
         this.error = 'Passwords do not match';
         return;
@@ -130,13 +133,14 @@ export default {
       this.error = null;
       
       try {
+        let response;
         if (this.isLogin) {
-          await this.login({
+          response = await this.login({
             email: this.email,
             password: this.password
           });
         } else {
-          await this.register({
+          response = await this.register({
             email: this.email,
             password: this.password,
             firstName: this.firstName,
@@ -144,9 +148,16 @@ export default {
           });
         }
         
-        // Redirect to dashboard or home page
-        this.$router.push('/dashboard');
+        console.log('Response:', response);
+        
+        if (response.status === 201 || response.status === 200) {
+          // Redirect to dashboard or home page
+          this.$router.push('/dashboard');
+        } else {
+          throw new Error('Unexpected response status');
+        }
       } catch (error) {
+        console.error('Error:', error);
         this.error = error.response?.data?.message || 
           (this.isLogin ? 'Login failed' : 'Registration failed');
       } finally {

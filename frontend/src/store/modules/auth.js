@@ -46,17 +46,26 @@ const actions = {
   async register({ commit }, userData) {
     try {
       const response = await axios.post('/api/auth/register', userData);
-      const { user, token } = response.data;
+      console.log('Register response:', response);
       
-      // saving to local storage
-      AuthService.setAuthData(user, token);
-      
-      commit('SET_USER', user);
-      commit('SET_TOKEN', token);
-      commit('SET_AUTHENTICATED', true);
+      if (response.status === 201 || response.status === 200) {
+        const { user, token } = response.data;
+        
+        if (!user || !token) {
+          throw new Error('Invalid response data: missing user or token');
+        }
+        
+        // saving to local storage
+        AuthService.setAuthData(user, token);
+        
+        commit('SET_USER', user);
+        commit('SET_TOKEN', token);
+        commit('SET_AUTHENTICATED', true);
+      }
       
       return response;
     } catch (error) {
+      console.error('Register error:', error);
       throw error;
     }
   },
