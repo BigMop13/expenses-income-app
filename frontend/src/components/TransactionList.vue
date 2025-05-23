@@ -1,14 +1,18 @@
 <template>
   <div class="transaction-list">
     <div class="header">
-      <h2 class="title">Transactions</h2>
+      <h2 class="title">Transakcje</h2>
       <button class="add-button" @click="showModal = true">
-        Add Transaction
+        Dodaj transakcję
       </button>
     </div>
     
     <!-- Transaction List -->
-    <div class="transactions">
+    <div v-if="loading" class="loading-state">
+      <p>Ładowanie transakcji...</p>
+    </div>
+    
+    <div v-else class="transactions">
       <div v-for="transaction in transactions" :key="transaction.id" class="transaction-item">
         <div class="transaction-info">
           <div class="transaction-main">
@@ -26,51 +30,59 @@
     </div>
 
     <!-- Empty State -->
-    <div v-if="!transactions.length" class="empty-state">
-      <p>No transactions found</p>
+    <div v-if="!loading && !transactions.length" class="empty-state">
+      <p>Brak transakcji</p>
+    </div>
+
+    <!-- Error State -->
+    <div v-if="error" class="error-state">
+      <p>{{ error }}</p>
+      <button @click="fetchTransactions" class="retry-button">
+        Spróbuj ponownie
+      </button>
     </div>
 
     <!-- Add Transaction Modal -->
     <div v-if="showModal" class="modal-overlay" @click="showModal = false">
       <div class="modal" @click.stop>
-        <h3>Add New Transaction</h3>
+        <h3>Dodaj nową transakcję</h3>
         <form @submit.prevent="addTransaction" class="transaction-form">
           <div class="form-group">
-            <label for="category">Category</label>
+            <label for="category">Kategoria</label>
             <input 
               id="category"
               v-model="newTransaction.category"
               type="text"
               required
-              placeholder="e.g., Groceries"
+              placeholder="np. Zakupy spożywcze"
             >
           </div>
 
           <div class="form-group">
-            <label for="description">Description</label>
+            <label for="description">Opis</label>
             <input 
               id="description"
               v-model="newTransaction.description"
               type="text"
               required
-              placeholder="e.g., Weekly groceries"
+              placeholder="np. Tygodniowe zakupy"
             >
           </div>
 
           <div class="form-group">
-            <label for="amount">Amount</label>
+            <label for="amount">Kwota</label>
             <input 
               id="amount"
               v-model="newTransaction.amount"
               type="number"
               step="0.01"
               required
-              placeholder="Enter amount (negative for expense)"
+              placeholder="Wprowadź kwotę (ujemna dla wydatku)"
             >
           </div>
 
           <div class="form-group">
-            <label for="date">Date</label>
+            <label for="date">Data</label>
             <input 
               id="date"
               v-model="newTransaction.date"
@@ -82,10 +94,10 @@
 
           <div class="form-actions">
             <button type="button" class="cancel-button" @click="showModal = false">
-              Cancel
+              Anuluj
             </button>
-            <button type="submit" class="submit-button">
-              Add Transaction
+            <button type="submit" class="submit-button" :disabled="submitting">
+              {{ submitting ? 'Dodawanie...' : 'Dodaj' }}
             </button>
           </div>
         </form>
@@ -95,34 +107,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import transactionService from '@/services/transactionService';
 
-// Sample data - replace with actual data from your backend
-const transactions = ref([
-  {
-    id: '1',
-    category: 'Groceries',
-    date: new Date('2024-03-20'),
-    amount: -50.25,
-    description: 'Weekly groceries'
-  },
-  {
-    id: '2',
-    category: 'Salary',
-    date: new Date('2024-03-19'),
-    amount: 3000,
-    description: 'Monthly salary'
-  },
-  {
-    id: '3',
-    category: 'Entertainment',
-    date: new Date('2024-03-18'),
-    amount: -25.99,
-    description: 'Movie tickets'
-  }
-]);
-
+const transactions = ref([]);
+const loading = ref(true);
+const error = ref(null);
 const showModal = ref(false);
+const submitting = ref(false);
 
 const newTransaction = ref({
   category: '',
@@ -131,30 +123,52 @@ const newTransaction = ref({
   date: new Date().toISOString().split('T')[0]
 });
 
-const addTransaction = () => {
-  const transaction = {
-    id: Date.now().toString(), // Simple ID generation
-    category: newTransaction.value.category,
-    description: newTransaction.value.description,
-    amount: parseFloat(newTransaction.value.amount),
-    date: new Date(newTransaction.value.date)
-  };
+const fetchTransactions = async () => {
+  loading.value = true;
+  error.value = null;
+  
+  try {
+    transactions.value = await transactionService.getTransactions();
+  } catch (err) {
+    console.error('Failed to fetch transactions:', err);
+    error.value = 'Nie udało się pobrać transakcji. Spróbuj ponownie później.';
+  } finally {
+    loading.value = false;
+  }
+};
 
-  transactions.value.unshift(transaction);
+const addTransaction = async () => {
+  submitting.value = true;
   
-  // Reset form
-  newTransaction.value = {
-    category: '',
-    description: '',
-    amount: '',
-    date: new Date().toISOString().split('T')[0]
-  };
-  
-  showModal.value = false;
+  try {
+    const transaction = {
+      category: newTransaction.value.category,
+      description: newTransaction.value.description,
+      amount: parseFloat(newTransaction.value.amount),
+      date: new Date(newTransaction.value.date)
+    };
+
+    await transactionService.addTransaction(transaction);
+    await fetchTransactions();
+    
+    newTransaction.value = {
+      category: '',
+      description: '',
+      amount: '',
+      date: new Date().toISOString().split('T')[0]
+    };
+    
+    showModal.value = false;
+  } catch (err) {
+    console.error('Failed to add transaction:', err);
+    alert('Nie udało się dodać transakcji. Spróbuj ponownie później.');
+  } finally {
+    submitting.value = false;
+  }
 };
 
 const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('en-US', {
+  return new Date(date).toLocaleDateString('pl-PL', {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
@@ -162,18 +176,21 @@ const formatDate = (date) => {
 };
 
 const formatAmount = (amount) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('pl-PL', {
     style: 'currency',
-    currency: 'USD'
+    currency: 'PLN'
   }).format(amount);
 };
+
+onMounted(() => {
+  fetchTransactions();
+});
 </script>
 
 <style scoped>
 .transaction-list {
-  max-width: 800px;
+  width: 100%;
   margin: 0 auto;
-  padding: 20px;
 }
 
 .header {
@@ -181,6 +198,8 @@ const formatAmount = (amount) => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .title {
@@ -199,6 +218,7 @@ const formatAmount = (amount) => {
   cursor: pointer;
   font-weight: 500;
   transition: background-color 0.2s;
+  white-space: nowrap;
 }
 
 .add-button:hover {
@@ -216,20 +236,19 @@ const formatAmount = (amount) => {
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s ease;
-}
-
-.transaction-item:hover {
-  transform: translateY(-2px);
 }
 
 .transaction-info {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .transaction-main {
+  flex: 1;
+  min-width: 200px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -260,6 +279,7 @@ const formatAmount = (amount) => {
 .amount {
   font-weight: 600;
   font-size: 1.1em;
+  white-space: nowrap;
 }
 
 .amount.income {
@@ -291,14 +311,17 @@ const formatAmount = (amount) => {
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 20px;
 }
 
 .modal {
   background: white;
   padding: 24px;
   border-radius: 12px;
-  width: 90%;
+  width: 100%;
   max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -326,10 +349,11 @@ const formatAmount = (amount) => {
 }
 
 .form-group input {
-  padding: 8px 12px;
+  padding: 12px;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 16px;
+  width: 100%;
 }
 
 .form-group input:focus {
@@ -343,6 +367,31 @@ const formatAmount = (amount) => {
   justify-content: flex-end;
   gap: 12px;
   margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions button {
+    width: 100%;
+    padding: 12px;
+  }
+
+  .transaction-info {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .transaction-details {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .amount {
+    font-size: 1.2em;
+  }
 }
 
 .cancel-button {
@@ -371,5 +420,41 @@ const formatAmount = (amount) => {
 
 .submit-button:hover {
   background-color: #059669;
+}
+
+.loading-state,
+.error-state {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  background: #f8fafc;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.error-state {
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+.retry-button {
+  margin-top: 16px;
+  padding: 8px 16px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.retry-button:hover {
+  background-color: #dc2626;
+}
+
+.submit-button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
 }
 </style>

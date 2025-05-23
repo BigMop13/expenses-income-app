@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { addBudget, getBudgets } = require('../controllers/budgetController');
+const { getTransactions, addTransaction } = require('../controllers/transactionController');
 const { protect } = require('../middleware/auth');
 
 // Protected routes (need to be logged in)
-router.post('/add', protect, addBudget);
-router.get('/get', protect, getBudgets);
+router.get('/get', protect, getTransactions);
+router.post('/add', protect, addTransaction);
 
 module.exports = router;

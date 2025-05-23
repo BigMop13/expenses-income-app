@@ -1,10 +1,24 @@
 <template>
-  <router-view />
+  <div id="app">
+    <Navbar v-if="isAuthenticated" />
+    <main :class="{ 'with-nav': isAuthenticated }">
+      <router-view />
+    </main>
+  </div>
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
+import Navbar from './components/Navbar.vue';
+
 export default {
-  name: 'App'
+  name: 'App',
+  components: {
+    Navbar
+  },
+  computed: {
+    ...mapGetters('auth', ['isAuthenticated'])
+  }
 }
 </script>
 
@@ -13,8 +27,27 @@ export default {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+main {
+  padding: 20px;
+}
+
+main.with-nav {
+  padding-top: 80px;
+}
+
+/* Global styles */
+button {
+  cursor: pointer;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 </style>
