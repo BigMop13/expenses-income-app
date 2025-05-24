@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <form @submit.prevent="handleSubmit" class="login-form">
-      <h2>{{ isLogin ? 'Login' : 'Register' }}</h2>
+      <h2>{{ isLogin ? 'Logowanie' : 'Rejestracja' }}</h2>
       
       <div class="form-group">
         <label for="email">Email</label>
@@ -11,58 +11,58 @@
           v-model="email"
           required
           class="form-control"
-          placeholder="Enter your email"
+          placeholder="Wprowadź swój email"
         />
       </div>
 
       <div class="form-group">
-        <label for="password">Password</label>
+        <label for="password">Hasło</label>
         <input
           type="password"
           id="password"
           v-model="password"
           required
           class="form-control"
-          placeholder="Enter your password"
+          placeholder="Wprowadź swoje hasło"
         />
       </div>
 
       <!-- Confirm Password field for registration -->
       <div v-if="!isLogin" class="form-group">
-        <label for="confirmPassword">Confirm Password</label>
+        <label for="confirmPassword">Potwierdź hasło</label>
         <input
           type="password"
           id="confirmPassword"
           v-model="confirmPassword"
           required
           class="form-control"
-          placeholder="Confirm your password"
+          placeholder="Potwierdź swoje hasło"
         />
       </div>
 
       <!-- First Name field for registration -->
       <div v-if="!isLogin" class="form-group">
-        <label for="firstName">First Name</label>
+        <label for="firstName">Imię</label>
         <input
           type="text"
           id="firstName"
           v-model="firstName"
           required
           class="form-control"
-          placeholder="Enter your first name"
+          placeholder="Wprowadź swoje imię"
         />
       </div>
 
       <!-- Last Name field for registration -->
       <div v-if="!isLogin" class="form-group">
-        <label for="lastName">Last Name</label>
+        <label for="lastName">Nazwisko</label>
         <input
           type="text"
           id="lastName"
           v-model="lastName"
           required
           class="form-control"
-          placeholder="Enter your last name"
+          placeholder="Wprowadź swoje nazwisko"
         />
       </div>
 
@@ -75,9 +75,9 @@
       </button>
 
       <div class="form-switch">
-        <span>{{ isLogin ? "Don't have an account?" : "Already have an account?" }}</span>
+        <span>{{ isLogin ? "Nie masz konta?" : "Masz już konto?" }}</span>
         <button type="button" class="btn-link" @click="toggleForm">
-          {{ isLogin ? 'Register here' : 'Login here' }}
+          {{ isLogin ? 'Zarejestruj się' : 'Zaloguj się' }}
         </button>
       </div>
     </form>
@@ -114,18 +114,17 @@ export default {
     },
     getButtonText() {
       if (this.loading) {
-        return this.isLogin ? 'Logging in...' : 'Registering...';
+        return this.isLogin ? 'Logowanie...' : 'Rejestracja...';
       }
-      return this.isLogin ? 'Login' : 'Register';
+      return this.isLogin ? 'Zaloguj się' : 'Zarejestruj się';
     }
   },
   methods: {
     ...mapActions('auth', ['login', 'register']),
     
     async handleSubmit() {
-      console.log('submit', this.email, this.password, this.firstName, this.lastName);
       if (!this.isLogin && !this.isPasswordsMatch) {
-        this.error = 'Passwords do not match';
+        this.error = 'Hasła nie są identyczne';
         return;
       }
 
@@ -148,18 +147,15 @@ export default {
           });
         }
         
-        console.log('Response:', response);
-        
         if (response.status === 201 || response.status === 200) {
-          // Redirect to dashboard or home page
           this.$router.push('/dashboard');
         } else {
-          throw new Error('Unexpected response status');
+          throw new Error('Nieoczekiwany status odpowiedzi');
         }
       } catch (error) {
         console.error('Error:', error);
         this.error = error.response?.data?.message || 
-          (this.isLogin ? 'Login failed' : 'Registration failed');
+          (this.isLogin ? 'Logowanie nie powiodło się' : 'Rejestracja nie powiodła się');
       } finally {
         this.loading = false;
       }
